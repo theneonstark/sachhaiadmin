@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Edit2, Trash2 } from "lucide-react"
 
-export default function CategoriesTable({ categories, onDelete }) {
+export default function CategoriesTable({ categories, onDelete, onEdit }) {
   return (
     <Card className="overflow-hidden">
       <div className="overflow-x-auto">
@@ -27,7 +27,7 @@ export default function CategoriesTable({ categories, onDelete }) {
             ) : (
               categories.map((category) => (
                 <tr key={category.id} className="hover:bg-gray-50">
-                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{category.name}</td>
+                  <td className="px-6 py-4 text-sm font-medium text-gray-900">{category.type}</td>
                   <td className="px-6 py-4 text-sm text-gray-600">{category.slug}</td>
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-2">
@@ -36,7 +36,12 @@ export default function CategoriesTable({ categories, onDelete }) {
                     </div>
                   </td>
                   <td className="px-6 py-4 flex gap-2">
-                    <Button variant="ghost" size="sm" className="gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="gap-1"
+                      onClick={() => onEdit(category)}
+                    >
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button

@@ -6,6 +6,8 @@ import CategoriesTable from "@/components/categories-table"
 import CreateCategoryModal from "@/components/create-category-modal"
 import { Plus } from "lucide-react"
 import AdminLayout from "../layout"
+import { Category, categoryAdd, categoryRemove, categoryUpdate } from "@/lib/apis"
+import EditCategoryModal from "@/components/edit-category-modal"
 
 const DEFAULT_CATEGORIES = [
   { id: 1, name: "Breaking News", slug: "breaking-news", color: "#C62828" },
@@ -18,27 +20,67 @@ const DEFAULT_CATEGORIES = [
 export default function CategoriesPage() {
   const [categories, setCategories] = useState(DEFAULT_CATEGORIES)
   const [isModalOpen, setIsModalOpen] = useState(false)
+  const [editModalOpen, setEditModalOpen] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState(null);
 
-  useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("sachhai-categories") || "[]")
-    if (stored.length === 0) {
-      localStorage.setItem("sachhai-categories", JSON.stringify(DEFAULT_CATEGORIES))
-    } else {
-      setCategories(stored)
+  // --------------------------
+  // 🔥 Fetch Categories from Backend
+  // --------------------------
+  const loadCategories = async () => {
+    try {
+      const res = await Category();
+      setCategories(res.data.categories)
+    } catch (error) {
+      console.log("Error fetching categories:", error)
     }
-  }, [])
-
-  const handleAddCategory = (newCategory) => {
-    const updated = [...categories, { ...newCategory, id: Date.now() }]
-    setCategories(updated)
-    localStorage.setItem("sachhai-categories", JSON.stringify(updated))
-    setIsModalOpen(false)
   }
 
-  const handleDeleteCategory = (id) => {
-    const updated = categories.filter((c) => c.id !== id)
-    setCategories(updated)
-    localStorage.setItem("sachhai-categories", JSON.stringify(updated))
+  useEffect(() => {
+    loadCategories()
+  }, [])
+
+  // --------------------------
+  // 🔥 Add Category to Backend
+  // --------------------------
+  const handleAddCategory = async (newCategory) => {
+    try {
+      const res = await categoryAdd(newCategory)
+      setCategories((prev) => [...prev, res.data.category])
+      setIsModalOpen(false)
+    } catch (error) {
+      console.log("Error adding category:", error)
+    }
+  }
+
+  const handleEditCategory = (category) => {
+    setSelectedCategory(category);
+    setEditModalOpen(true);
+  };
+
+  const handleUpdateCategory = async (updated) => {
+    try {
+      const res = await categoryUpdate(updated.id, updated);
+
+      setCategories(categories.map((cat) => 
+        cat.id === updated.id ? res.data.category : cat
+      ));
+
+      setEditModalOpen(false);
+    } catch (error) {
+      console.log("Error updating:", error);
+    }
+  };
+
+  // --------------------------
+  // 🔥 Delete Category from Backend
+  // --------------------------
+  const handleDeleteCategory = async (id) => {
+    try {
+      await categoryRemove(id)
+      setCategories(categories.filter((c) => c.id !== id))
+    } catch (error) {
+      console.log("Error deleting category:", error)
+    }
   }
 
   return (
@@ -55,10 +97,17 @@ export default function CategoriesPage() {
         </Button>
       </div>
 
-      <CategoriesTable categories={categories} onDelete={handleDeleteCategory} />
+      <CategoriesTable categories={categories} onDelete={handleDeleteCategory} onEdit={handleEditCategory}/>
 
       <CreateCategoryModal open={isModalOpen} onOpenChange={setIsModalOpen} onAdd={handleAddCategory} />
     </div>
+
+    <EditCategoryModal
+      open={editModalOpen}
+      onOpenChange={setEditModalOpen}
+      category={selectedCategory}
+      onUpdate={handleUpdateCategory}
+    />
     </AdminLayout>
   )
 }

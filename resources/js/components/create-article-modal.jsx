@@ -10,7 +10,7 @@ import { Calendar } from "lucide-react"
 
 const CATEGORIES = ["Breaking News", "Politics", "Technology", "Entertainment", "Business", "Lifestyle", "Sports"]
 
-export default function CreateArticleModal({ open, onOpenChange, onAdd }) {
+export default function CreateArticleModal({ open, onOpenChange, onAdd, categories }) {
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
@@ -21,26 +21,41 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd }) {
     status: "draft",
   })
 
-  const handleSubmit = (e) => {
-    e.preventDefault()
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
     if (formData.title && formData.content && formData.category) {
-      onAdd({
-        ...formData,
-        createdAt: new Date().toISOString(),
-        views: 0,
-        likes: 0,
-      })
-      setFormData({
-        title: "",
-        excerpt: "",
-        content: "",
-        category: "",
-        author: "Admin",
-        publishDate: new Date().toISOString().split("T")[0],
-        status: "draft",
-      })
+      try {
+        const res = await addArticle({
+          title: formData.title,
+          description: formData.content,
+          type_id: formData.category,  // Category ID
+          author: formData.author,
+          image: null, // image upload later
+          featured: formData.status === "published" ? 1 : 0,
+        });
+
+        onAdd(res.data.article);  // Add new article in frontend list
+
+        setFormData({
+          title: "",
+          excerpt: "",
+          content: "",
+          category: "",
+          author: "Admin",
+          publishDate: new Date().toISOString().split("T")[0],
+          status: "draft",
+        });
+
+        onOpenChange(false); // close modal
+
+      } catch (error) {
+        console.log(error);
+        alert("Failed to add article");
+      }
     }
-  }
+  };
+
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -69,9 +84,9 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd }) {
                   <SelectValue placeholder="Select category" />
                 </SelectTrigger>
                 <SelectContent>
-                  {CATEGORIES.map((cat) => (
-                    <SelectItem key={cat} value={cat}>
-                      {cat}
+                  {categories.map((cat) => (
+                    <SelectItem key={cat.id} value={cat.id.toString()}>
+                      {cat.type}
                     </SelectItem>
                   ))}
                 </SelectContent>

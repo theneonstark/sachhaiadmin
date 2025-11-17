@@ -8,35 +8,76 @@ import ArticlesTable from "@/components/articles-table"
 import CreateArticleModal from "@/components/create-article-modal"
 import { Plus, Search, TrendingUp, BarChart3 } from "lucide-react"
 import AdminLayout from "../layout"
+import { Article, articleAdd, articleRemove, Category } from "@/lib/apis"
 
 export default function ArticlesPage() {
   const [articles, setArticles] = useState([])
+  const [categories, setCategories] = useState([]);
   const [searchTerm, setSearchTerm] = useState("")
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [filter, setFilter] = useState("all")
 
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("sachhai-articles") || "[]")
-    setArticles(stored)
+    const fetchCategories = async () => {
+      try {
+        const res = await Category(); // ⬅ your API function
+        setCategories(res.data.categories);
+      } catch (error) {
+        console.log("Error loading categories:", error);
+      }
+    };
+
+    fetchCategories();
+  }, []);
+  // -----------------------------
+  // 🔥 1. Fetch articles from backend
+  // -----------------------------
+  const loadArticles = async () => {
+    try {
+      const res = await Article()
+      setArticles(res.data.articles)
+    } catch (error) {
+      console.log("Error fetching articles:", error)
+    }
+  }
+
+  useEffect(() => {
+    loadArticles()
   }, [])
 
-  const handleAddArticle = (newArticle) => {
-    const updated = [...articles, { ...newArticle, id: Date.now() }]
-    setArticles(updated)
-    localStorage.setItem("sachhai-articles", JSON.stringify(updated))
-    setIsModalOpen(false)
+  // -----------------------------
+  // 🔥 2. Add article to DB
+  // -----------------------------
+  const handleAddArticle = async (newArticle) => {
+    try {
+      const res = await articleAdd(newArticle)
+      setArticles((prev) => [...prev, res.data.article])
+      setIsModalOpen(false)
+    } catch (error) {
+      console.log("Error adding article:", error)
+    }
   }
 
-  const handleDeleteArticle = (id) => {
-    const updated = articles.filter((a) => a.id !== id)
-    setArticles(updated)
-    localStorage.setItem("sachhai-articles", JSON.stringify(updated))
+  // -----------------------------
+  // 🔥 3. Delete article from DB
+  // -----------------------------
+  const handleDeleteArticle = async (id) => {
+    try {
+      await articleRemove(id)
+      setArticles((prev) => prev.filter((a) => a.id !== id))
+    } catch (error) {
+      console.log("Error deleting article:", error)
+    }
   }
 
+  // -----------------------------
+  // 🔥 Filters + Search
+  // -----------------------------
   const filteredArticles = articles.filter((a) => {
     const matchesSearch =
       a.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      a.category.toLowerCase().includes(searchTerm.toLowerCase())
+      a.type.toLowerCase().includes(searchTerm.toLowerCase())
+
     const matchesFilter = filter === "all" || a.status === filter
     return matchesSearch && matchesFilter
   })
@@ -48,6 +89,7 @@ export default function ArticlesPage() {
   return (
     <AdminLayout>
       <div className="space-y-6">
+
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Articles</h1>
@@ -59,8 +101,9 @@ export default function ArticlesPage() {
         </Button>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+        <div className="bg-white p-4 rounded-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Articles</p>
@@ -69,26 +112,29 @@ export default function ArticlesPage() {
             <BarChart3 className="w-8 h-8 text-blue-500 opacity-20" />
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+
+        <div className="bg-white p-4 rounded-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Views</p>
-              <p className="text-2xl font-bold text-gray-900">{totalViews.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{totalViews.toLocaleString()}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-green-500 opacity-20" />
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200">
+
+        <div className="bg-white p-4 rounded-lg border">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-gray-600 text-sm">Total Engagement</p>
-              <p className="text-2xl font-bold text-gray-900">{totalEngagement.toLocaleString()}</p>
+              <p className="text-2xl font-bold">{totalEngagement}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-500 opacity-20" />
           </div>
         </div>
       </div>
 
+      {/* Search + Filter */}
       <div className="space-y-4">
         <div className="flex gap-4 items-end">
           <div className="relative flex-1">
@@ -101,25 +147,27 @@ export default function ArticlesPage() {
             />
           </div>
 
-          <Tabs value={filter} onValueChange={setFilter} className="w-auto">
+          <Tabs value={filter} onValueChange={setFilter}>
             <TabsList className="grid grid-cols-3 h-10">
-              <TabsTrigger value="all" className="text-xs">
-                All
-              </TabsTrigger>
-              <TabsTrigger value="published" className="text-xs">
-                Published
-              </TabsTrigger>
-              <TabsTrigger value="draft" className="text-xs">
-                Draft
-              </TabsTrigger>
+              <TabsTrigger value="all" className="text-xs">All</TabsTrigger>
+              <TabsTrigger value="published" className="text-xs">Published</TabsTrigger>
+              <TabsTrigger value="draft" className="text-xs">Draft</TabsTrigger>
             </TabsList>
           </Tabs>
         </div>
 
+        {/* Table */}
         <ArticlesTable articles={filteredArticles} onDelete={handleDeleteArticle} />
       </div>
 
-      <CreateArticleModal open={isModalOpen} onOpenChange={setIsModalOpen} onAdd={handleAddArticle} />
+      {/* Modal */}
+      <CreateArticleModal
+        open={isModalOpen}
+        onOpenChange={setIsModalOpen}
+        categories={categories}   // ⬅ dynamic categories
+        onAdd={handleAddArticle}
+      />
+
     </div>
     </AdminLayout>
   )

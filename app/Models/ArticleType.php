@@ -11,6 +11,8 @@ class ArticleType extends Model
 
     protected $fillable = [
         'type',
+        'slug',
+        'color',
     ];
 
     // 🔥 One type has many articles

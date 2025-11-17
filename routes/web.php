@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\ArticleController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\ProfileController;
 use Illuminate\Foundation\Application;
@@ -17,6 +18,16 @@ Route::group(['prefix' => 'auth'], function () {
 
 Route::group(['middleware' => 'auth'], function () {
     Route::get('/{type}', [HomeController::class, 'index']);
+
+    Route::group(['prefix' => 'article'], function () {
+        Route::get('/category', [ArticleController::class, 'articleCategory']);
+        Route::post('/category/add', [ArticleController::class, 'addCategory']);
+        Route::post('/category/update/{id}', [ArticleController::class, 'updateCategory']);
+        Route::post('/category/remove/{id}', [ArticleController::class, 'removeCategory']);
+        Route::get('/data', [ArticleController::class, 'articles']);
+        Route::post('/add', [ArticleController::class, 'addArticle']);
+        Route::post('/remove', [ArticleController::class, 'removeArticle']);
+    });
 });
 
 

@@ -25,195 +25,72 @@ export const Login = async (data) => {
     }
 };
 
-export const Data = async () => {
-    try{
-        const res = await axios.get('/region')
-        return res;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
-}
-
-export const updateProfile = async (data, isFileUpload = false) => {
-  try {
-    let response;
-
-    if (isFileUpload) {
-      // 🟢 For file uploads
-      response = await axios.post("/auth/update", data, {
-        headers: { "Content-Type": "multipart/form-data" },
-      });
-    } else {
-      // 🟡 For normal JSON payload
-      response = await axios.post("/auth/update", { data });
-    }
-
-    return response;
-  } catch (err) {
-    console.error("Something went wrong", err);
-    throw err;
-  }
-};
-
-export const updateLandingPage = async(data) => {
-    try{
-        const response = await axios.post(`/updatelandingpage`, data)
-        return response;
-    }catch(err){
-        console.error('Something went wrong',err);
-        throw err;
-    }
-}
-
-export const getLandingPage = async() => {
-    try{
-        const res = await axios.get('/getLandingPage');
-        return res;
-    }catch(error){
-        console.error(error);
-        throw error;
-    }
-}
-
-export const membershipPlans = async() => {
-    try{
-        const res = await axios.get('/membership/plans');
-        return res;
-    }catch(error){
-        console.error(error);
-        throw error;
-    }
-}
-
-export const increaseView = async (id) => {
-  try {
-    const res = await axios.post("/increase-view", { id });
-    return res.data;
-  } catch (error) {
-    console.error("Error increasing view:", error);
-    throw error;
-  }
-};
-
-export const getFeatured = async(data) => {
-    try{
-        const res = await axios.post('/featured', data);
-        return res;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
-}
-
-export const updatePassword = async(data) => {
-    try{
-        const res = await axios.post('/auth/passwordChange', data);
-        return res;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
-}
-
-export const filter = async(data) => {
-    try{
-        const res = await axios.post('/search/filter', data);
-        return res;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
-}
-
-export const sparkleUser = async() => {
+export const Category = async () => {
   try{
-    const res = await axios.get('/data/sparkle')
-    return res;
+    const res = await axios.get('/article/category');
+    return res
   }catch(err){
     console.error(err);
     throw err;
   }
 }
 
-export const shineUser = async() => {
+export const categoryAdd = async (data) => {
   try{
-    const res = await axios.get('/data/shine')
+    const res = await axios.post('/article/category/add', data)
     return res;
+  }catch (err){
+    console.error(err);
+    throw err;
+  }
+}
+
+export const categoryUpdate = async (id, data) => {
+  try{
+    const res = await axios.post(`/article/category/update/${id}`, data);
+    return res;
+  }catch (err){
+    console.error(err);
+    throw err;
+  }
+}
+
+export const categoryRemove = async (id) => {
+  try{
+    const res = await axios.post(`/article/category/remove/${id}`);
+    return res;
+  }catch (err){
+    console.error(err);
+    throw err;
+  }
+}
+
+export const Article = async () => {
+  try{
+    const res = axios.get('/article/data');
+    return res
   }catch(err){
     console.error(err);
     throw err;
   }
 }
 
-export const shinePlusUser = async() => {
+export const articleAdd = async (data) => {
   try{
-    const res = await axios.get('/data/shinePlus')
+    const res = axios.post('/article/add', data)
     return res;
-  }catch(err){
+  }catch (err){
     console.error(err);
     throw err;
   }
 }
 
-// Admin APIs
-
-export const userdata = async() => {
-    try{
-        const res = await axios.get('/admin/userdata');
-        return res?.data;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
+export const articleRemove = async (data) => {
+  try{
+    const res = axios.post('/article/remove', data)
+    return res;
+  }catch (err){
+    console.error(err);
+    throw err;
+  }
 }
-
-export const revenueData = async() => {
-    try{
-        const res = await axios.get('/admin/revenue');
-        return res;
-    }catch(err){
-        console.error(err);
-        throw err;
-    }
-}
-
-export const revenueByTier = async () => {
-  try {
-    const res = await axios.get('/admin/revenue-tier');
-    return res;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-};
-
-export const addFeature = async (userId) => {
-  try {
-    const res = await axios.post('/admin/feature/add', { user_id: userId });
-    return res;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-};
-
-export const removeFeature = async (userId) => {
-  try {
-    const res = await axios.post('/admin/feature/remove', { user_id: userId });
-    return res;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-};
-
-export const updateAdminSettings = async (data) => {
-  try {
-    const res = await axios.post('/admin/setting/update', data);
-    return res;
-  } catch (err) {
-    console.error(err);
-    throw err;
-  }
-};
