@@ -7,6 +7,9 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "lucide-react";
 
+import ReactQuill from "react-quill";
+import "react-quill/dist/quill.snow.css";
+
 export default function CreateArticleModal({ open, onOpenChange, onAdd, categories, initial }) {
 
   const [formData, setFormData] = useState({
@@ -86,9 +89,8 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
 
     const payload = new FormData();
 
-    // Normal fields
     payload.append("title", formData.title);
-    payload.append("description", formData.content);
+    payload.append("description", formData.content); // HTML from Quill
     payload.append("type_id", formData.category);
     payload.append("author", formData.author);
     payload.append("status", formData.status);
@@ -96,17 +98,14 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     payload.append("excerpt", formData.excerpt || "");
     payload.append("featured", formData.status === "published" ? 1 : 0);
 
-    // SEO
     payload.append("meta_title", formData.meta_title || "");
     payload.append("meta_description", formData.meta_description || "");
     payload.append("meta_keywords", formData.meta_keywords || "");
     payload.append("slug", formData.slug || "");
 
-    // Category Name
     const selectedCat = categories.find((c) => String(c.id) === formData.category);
     payload.append("type", selectedCat?.type || "");
 
-    // Image
     if (imageFile) {
       payload.append("image", imageFile);
     } else if (initial?.image) {
@@ -148,9 +147,7 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
                 <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={String(cat.id)}>
-                      {cat.type}
-                    </SelectItem>
+                    <SelectItem key={cat.id} value={String(cat.id)}>{cat.type}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -181,19 +178,21 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
             />
           </div>
 
-          {/* Content */}
+          {/* 🔥 React Quill Editor */}
           <div>
             <label className="block text-sm font-medium mb-1">Content *</label>
-            <Textarea
-              className="min-h-32"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              required
-            />
+            <div className="bg-white border rounded">
+              <ReactQuill
+                theme="snow"
+                value={formData.content}
+                onChange={(value) => setFormData({ ...formData, content: value })}
+                style={{ height: "200px" }}
+              />
+            </div>
           </div>
 
           {/* Image + Date */}
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 pt-10">
             <div>
               <label className="block text-sm font-medium mb-1">Featured Image</label>
               <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
@@ -212,7 +211,7 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
             </div>
           </div>
 
-          {/* SEO fields */}
+          {/* SEO */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Meta Title</label>
             <Input
