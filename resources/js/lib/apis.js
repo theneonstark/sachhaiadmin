@@ -20,7 +20,7 @@ export const Login = async (data) => {
         });
         return response; // Directly returning the data
     } catch (error) {
-        console.error('Error fetching business statistics:', error);
+        console.error(error);
         throw error; // Re-throw the error for handling in the component
     }
 };

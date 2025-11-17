@@ -41,10 +41,13 @@ export default function Sidebar() {
       </nav>
 
       <div className="border-t border-gray-800 p-4">
-        <button className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
-          <LogOut className="w-5 h-5" />
-          <span>Logout</span>
-        </button>
+        
+        <Link href={'/auth/logout'}>
+          <button className="flex items-center gap-3 w-full px-4 py-3 text-gray-300 hover:bg-gray-800 rounded-lg transition">
+            <LogOut className="w-5 h-5" />
+            <span>Logout</span>
+          </button>
+        </Link>
       </div>
     </div>
   )

@@ -7,10 +7,18 @@ use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
 
 Route::get('/', function () {
-    return Inertia::render('Welcome');
+    return Inertia::render('Auth/page');
+})->middleware('guest');
+
+Route::group(['prefix' => 'auth'], function () {
+    Route::post('/check', [HomeController::class, 'login']);
+    Route::get('/logout', [HomeController::class, 'logout'])->name('logout');
 });
 
-Route::get('/{type}', [HomeController::class, 'index']);
+Route::group(['middleware' => 'auth'], function () {
+    Route::get('/{type}', [HomeController::class, 'index']);
+});
+
 
 
 // Route::get('/dashboard', function () {
