@@ -25,8 +25,10 @@ Route::group(['middleware' => 'auth'], function () {
         Route::post('/category/update/{id}', [ArticleController::class, 'updateCategory']);
         Route::post('/category/remove/{id}', [ArticleController::class, 'removeCategory']);
         Route::get('/data', [ArticleController::class, 'articles']);
+        Route::get('/{identifier}', [ArticleController::class, 'show']); // id or slug
         Route::post('/add', [ArticleController::class, 'addArticle']);
-        Route::post('/remove', [ArticleController::class, 'removeArticle']);
+        Route::post('/update/{id}', [ArticleController::class, 'updateArticle']);
+        Route::post('/remove/{id}', [ArticleController::class, 'removeArticle']);
     });
 });
 

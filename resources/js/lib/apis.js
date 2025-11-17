@@ -77,7 +77,7 @@ export const Article = async () => {
 
 export const articleAdd = async (data) => {
   try{
-    const res = axios.post('/article/add', data)
+    const res = axios.post('/article/add', data,  { headers: {'Content-Type': 'multipart/form-data'} });
     return res;
   }catch (err){
     console.error(err);
@@ -85,9 +85,19 @@ export const articleAdd = async (data) => {
   }
 }
 
-export const articleRemove = async (data) => {
+export const articleUpdate = async (id,data) => {
   try{
-    const res = axios.post('/article/remove', data)
+    const res = axios.post(`/article/update/${id}`, data);
+    return res;
+  }catch (err){
+    console.error(err);
+    throw err;
+  }
+}
+
+export const articleRemove = async (id) => {
+  try{
+    const res = axios.post(`/article/remove/${id}`)
     return res;
   }catch (err){
     console.error(err);

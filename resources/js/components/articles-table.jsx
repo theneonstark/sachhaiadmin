@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { Edit2, Trash2, Eye, MessageSquare } from "lucide-react"
 
-export default function ArticlesTable({ articles, onDelete }) {
+export default function ArticlesTable({ articles, onDelete, onEdit }) {
   console.log(articles);
   
   const getStatusColor = (status) => {
@@ -67,7 +67,7 @@ export default function ArticlesTable({ articles, onDelete }) {
                     {article.likes || 0}
                   </td>
                   <td className="px-6 py-4 flex gap-2">
-                    <Button variant="ghost" size="sm" className="gap-1">
+                    <Button variant="ghost" size="sm" className="gap-1" onClick={() => onEdit(article)}>
                       <Edit2 className="w-4 h-4" />
                     </Button>
                     <Button
