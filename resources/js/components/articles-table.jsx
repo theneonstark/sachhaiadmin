@@ -6,6 +6,8 @@ import { Badge } from "@/components/ui/badge"
 import { Edit2, Trash2, Eye, MessageSquare } from "lucide-react"
 
 export default function ArticlesTable({ articles, onDelete }) {
+  console.log(articles);
+  
   const getStatusColor = (status) => {
     switch (status) {
       case "published":
@@ -48,7 +50,7 @@ export default function ArticlesTable({ articles, onDelete }) {
                     <p className="text-sm font-medium text-gray-900 line-clamp-1">{article.title}</p>
                   </td>
                   <td className="px-6 py-4">
-                    <Badge variant="outline">{article.category}</Badge>
+                    <Badge variant="outline">{article.type.type}</Badge>
                   </td>
                   <td className="px-6 py-4">
                     <p className="text-sm text-gray-600">{article.author || "Admin"}</p>

@@ -1,16 +1,16 @@
-"use client"
+"use client";
+import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Calendar } from "lucide-react";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Textarea } from "@/components/ui/textarea"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
-import { Calendar } from "lucide-react"
-
-const CATEGORIES = ["Breaking News", "Politics", "Technology", "Entertainment", "Business", "Lifestyle", "Sports"]
-
-export default function CreateArticleModal({ open, onOpenChange, onAdd, categories }) {
+export default function CreateArticleModal({ open, onOpenChange, onAdd, categories, initial }) {
+  // initial can be used for edit (if provided)
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
@@ -19,85 +19,86 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     author: "Admin",
     publishDate: new Date().toISOString().split("T")[0],
     status: "draft",
-  })
+  });
+  const [imageFile, setImageFile] = useState(null);
+
+  useEffect(() => {
+    if (initial) {
+      setFormData({
+        title: initial.title || "",
+        excerpt: initial.excerpt || "",
+        content: initial.description || "",
+        category: initial.type_id ? String(initial.type_id) : "",
+        author: initial.author || "Admin",
+        publishDate: initial.publish_date ? initial.publish_date.split('T')[0] : new Date().toISOString().split("T")[0],
+        status: initial.status || "draft",
+      });
+      setImageFile(null);
+    } else {
+      setFormData({
+        title: "",
+        excerpt: "",
+        content: "",
+        category: "",
+        author: "Admin",
+        publishDate: new Date().toISOString().split("T")[0],
+        status: "draft",
+      });
+      setImageFile(null);
+    }
+  }, [initial, open]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-
-    if (formData.title && formData.content && formData.category) {
-      try {
-        const res = await addArticle({
-          title: formData.title,
-          description: formData.content,
-          type_id: formData.category,  // Category ID
-          author: formData.author,
-          image: null, // image upload later
-          featured: formData.status === "published" ? 1 : 0,
-        });
-
-        onAdd(res.data.article);  // Add new article in frontend list
-
-        setFormData({
-          title: "",
-          excerpt: "",
-          content: "",
-          category: "",
-          author: "Admin",
-          publishDate: new Date().toISOString().split("T")[0],
-          status: "draft",
-        });
-
-        onOpenChange(false); // close modal
-
-      } catch (error) {
-        console.log(error);
-        alert("Failed to add article");
-      }
+    if (!formData.title || !formData.content || !formData.category) {
+      alert("Please fill required fields");
+      return;
     }
-  };
 
+    // Build FormData for file uploads
+    const payload = new FormData();
+    payload.append('title', formData.title);
+    payload.append('description', formData.content);
+    payload.append('type_id', formData.category);
+    payload.append('author', formData.author);
+    payload.append('status', formData.status);
+    payload.append('publish_date', formData.publishDate);
+    payload.append('excerpt', formData.excerpt || "");
+    payload.append('featured', formData.status === 'published' ? 1 : 0);
+    if (imageFile) payload.append('image', imageFile);
+
+    // if editing, parent should call articleUpdate, else articleAdd
+    onAdd(payload);
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Create New Article</DialogTitle>
-          <DialogDescription>Add a comprehensive article with full details</DialogDescription>
+          <DialogTitle>{initial ? "Edit Article" : "Create New Article"}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Title *</label>
-            <Input
-              value={formData.title}
-              onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-              placeholder="Enter article title"
-              required
-            />
+            <Input value={formData.title} onChange={(e)=>setFormData({...formData,title:e.target.value})} required />
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Category *</label>
-              <Select value={formData.category} onValueChange={(val) => setFormData({ ...formData, category: val })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select category" />
-                </SelectTrigger>
+              <label className="block text-sm font-medium mb-1">Category *</label>
+              <Select value={formData.category} onValueChange={(val)=>setFormData({...formData,category:val})}>
+                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
                 <SelectContent>
-                  {categories.map((cat) => (
-                    <SelectItem key={cat.id} value={cat.id.toString()}>
-                      {cat.type}
-                    </SelectItem>
-                  ))}
+                  {categories.map(cat => <SelectItem key={cat.id} value={String(cat.id)}>{cat.type}</SelectItem>)}
                 </SelectContent>
               </Select>
             </div>
+
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Status</label>
-              <Select value={formData.status} onValueChange={(val) => setFormData({ ...formData, status: val })}>
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
+              <label className="block text-sm font-medium mb-1">Status</label>
+              <Select value={formData.status} onValueChange={(val)=>setFormData({...formData,status:val})}>
+                <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
                   <SelectItem value="published">Published</SelectItem>
@@ -108,58 +109,53 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Excerpt</label>
-            <Textarea
-              value={formData.excerpt}
-              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-              placeholder="Brief summary of the article (appears in previews)"
-              className="min-h-16"
-            />
+            <label className="block text-sm font-medium mb-1">Excerpt</label>
+            <Textarea value={formData.excerpt} onChange={(e)=>setFormData({...formData,excerpt:e.target.value})} />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Full Content *</label>
-            <Textarea
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              placeholder="Write the full article content here..."
-              className="min-h-32"
-              required
-            />
+            <label className="block text-sm font-medium mb-1">Full Content *</label>
+            <div className="bg-white border rounded">
+              <CKEditor
+                editor={ClassicEditor}
+                data={formData.content}
+                onChange={(event, editor) => {
+                  const data = editor.getData();
+                  setFormData(prev => ({...prev, content: data}));
+                }}
+              />
+            </div>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Author</label>
-              <Input
-                value={formData.author}
-                onChange={(e) => setFormData({ ...formData, author: e.target.value })}
-                placeholder="Author name"
-              />
+              <label className="block text-sm font-medium mb-1">Featured Image</label>
+              <input type="file" accept="image/*" onChange={(e)=>setImageFile(e.target.files[0])} />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
-                <Calendar className="w-4 h-4" />
-                Publish Date
+              <label className="block text-sm font-medium mb-1 flex items-center gap-2">
+                <Calendar className="w-4 h-4" /> Publish Date
               </label>
-              <Input
-                type="date"
-                value={formData.publishDate}
-                onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
-              />
+              <Input type="date" value={formData.publishDate} onChange={(e)=>setFormData({...formData,publishDate:e.target.value})} />
             </div>
           </div>
 
+          {/* SEO fields could be toggled; include quick inputs */}
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Meta Title</label>
+            <Input value={formData.meta_title||''} onChange={(e)=>setFormData({...formData,meta_title:e.target.value})} placeholder="Optional meta title" />
+            <label className="text-sm font-medium">Meta Description</label>
+            <Textarea value={formData.meta_description||''} onChange={(e)=>setFormData({...formData,meta_description:e.target.value})} placeholder="Optional meta description" />
+            <label className="text-sm font-medium">Meta Keywords</label>
+            <Input value={formData.meta_keywords||''} onChange={(e)=>setFormData({...formData,meta_keywords:e.target.value})} placeholder="comma,separated,keywords" />
+          </div>
+
           <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
-              Cancel
-            </Button>
-            <Button type="submit" className="flex-1">
-              Create Article
-            </Button>
+            <Button type="button" variant="outline" onClick={()=>onOpenChange(false)} className="flex-1">Cancel</Button>
+            <Button type="submit" className="flex-1">{initial ? "Update Article" : "Create Article"}</Button>
           </div>
         </form>
       </DialogContent>
     </Dialog>
-  )
+  );
 }

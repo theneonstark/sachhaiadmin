@@ -50,13 +50,14 @@ export default function ArticlesPage() {
   // -----------------------------
   const handleAddArticle = async (newArticle) => {
     try {
-      const res = await articleAdd(newArticle)
-      setArticles((prev) => [...prev, res.data.article])
-      setIsModalOpen(false)
-    } catch (error) {
-      console.log("Error adding article:", error)
+      const res = await articleAdd(newArticle);
+      await loadArticles();            // <-- fresh DB reload
+      setIsModalOpen(false);
+    } catch (err) {
+      console.log(err);
     }
-  }
+  };
+
 
   // -----------------------------
   // 🔥 3. Delete article from DB
