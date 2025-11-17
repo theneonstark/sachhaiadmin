@@ -6,9 +6,10 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Calendar } from "lucide-react";
+import { CKEditor } from "@ckeditor/ckeditor5-react";
+import ClassicEditor from "@ckeditor/ckeditor5-build-classic";
 
 export default function CreateArticleModal({ open, onOpenChange, onAdd, categories, initial }) {
-
   const [formData, setFormData] = useState({
     title: "",
     excerpt: "",
@@ -25,7 +26,7 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
 
   const [imageFile, setImageFile] = useState(null);
 
-  // Load edit mode data
+  // Load editing data
   useEffect(() => {
     if (initial) {
       setFormData({
@@ -62,9 +63,15 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     }
   }, [initial, open]);
 
-  // Auto slug
+  // --------------------------
+  // Generate Slug automatically
+  // --------------------------
   const slugify = (str) =>
-    str.toLowerCase().trim().replace(/[^\w\s-]/g, "").replace(/\s+/g, "-");
+    str
+      .toLowerCase()
+      .trim()
+      .replace(/[^\w\s-]/g, "")
+      .replace(/\s+/g, "-");
 
   const handleTitleChange = (e) => {
     const value = e.target.value;
@@ -75,7 +82,9 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     });
   };
 
-  // Submit handler
+  // --------------------------
+  // SUBMIT FORM (Send FULL payload)
+  // --------------------------
   const handleSubmit = async (e) => {
     e.preventDefault();
 
@@ -86,7 +95,7 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
 
     const payload = new FormData();
 
-    // Normal fields
+    // Basic fields
     payload.append("title", formData.title);
     payload.append("description", formData.content);
     payload.append("type_id", formData.category);
@@ -94,25 +103,30 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     payload.append("status", formData.status);
     payload.append("publish_date", formData.publishDate);
     payload.append("excerpt", formData.excerpt || "");
+
+    // Featured flag
     payload.append("featured", formData.status === "published" ? 1 : 0);
 
-    // SEO
+    // SEO fields
     payload.append("meta_title", formData.meta_title || "");
     payload.append("meta_description", formData.meta_description || "");
     payload.append("meta_keywords", formData.meta_keywords || "");
+
+    // Slug
     payload.append("slug", formData.slug || "");
 
-    // Category Name
+    // Category Name (useful for backend)
     const selectedCat = categories.find((c) => String(c.id) === formData.category);
     payload.append("type", selectedCat?.type || "");
 
-    // Image
+    // IMAGE handler
     if (imageFile) {
       payload.append("image", imageFile);
     } else if (initial?.image) {
-      payload.append("old_image", initial.image);
+      payload.append("old_image", initial.image); // prevents deletion
     }
 
+    // Send full payload to parent
     onAdd(payload);
   };
 
@@ -120,32 +134,34 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{initial ? "Edit Article" : "Create Article"}</DialogTitle>
+          <DialogTitle>{initial ? "Edit Article" : "Create New Article"}</DialogTitle>
         </DialogHeader>
 
+        {/* FORM START */}
         <form onSubmit={handleSubmit} className="space-y-4">
-
-          {/* Title */}
+          
+          {/* TITLE */}
           <div>
             <label className="block text-sm font-medium mb-1">Title *</label>
             <Input value={formData.title} onChange={handleTitleChange} required />
           </div>
 
-          {/* Slug */}
+          {/* SLUG (auto-generated) */}
           <div>
-            <label className="block text-sm font-medium mb-1">Slug</label>
-            <Input value={formData.slug} onChange={(e) => setFormData({ ...formData, slug: e.target.value })} />
+            <label className="block text-sm font-medium mb-1">Slug (Auto)</label>
+            <Input value={formData.slug} onChange={(e)=>setFormData({...formData,slug:e.target.value})} />
           </div>
 
           {/* Category + Status */}
           <div className="grid grid-cols-2 gap-4">
+            
+            {/* CATEGORY */}
             <div>
               <label className="block text-sm font-medium mb-1">Category *</label>
-              <Select
-                value={formData.category}
-                onValueChange={(val) => setFormData({ ...formData, category: val })}
-              >
-                <SelectTrigger><SelectValue placeholder="Select category" /></SelectTrigger>
+              <Select value={formData.category} onValueChange={(val)=>setFormData({...formData,category:val})}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select category" />
+                </SelectTrigger>
                 <SelectContent>
                   {categories.map((cat) => (
                     <SelectItem key={cat.id} value={String(cat.id)}>
@@ -156,12 +172,10 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
               </Select>
             </div>
 
+            {/* STATUS */}
             <div>
               <label className="block text-sm font-medium mb-1">Status</label>
-              <Select
-                value={formData.status}
-                onValueChange={(val) => setFormData({ ...formData, status: val })}
-              >
+              <Select value={formData.status} onValueChange={(val)=>setFormData({...formData,status:val})}>
                 <SelectTrigger><SelectValue /></SelectTrigger>
                 <SelectContent>
                   <SelectItem value="draft">Draft</SelectItem>
@@ -170,36 +184,48 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
                 </SelectContent>
               </Select>
             </div>
+
           </div>
 
           {/* Excerpt */}
           <div>
             <label className="block text-sm font-medium mb-1">Excerpt</label>
-            <Textarea
-              value={formData.excerpt}
-              onChange={(e) => setFormData({ ...formData, excerpt: e.target.value })}
-            />
+            <Textarea value={formData.excerpt} onChange={(e)=>setFormData({...formData,excerpt:e.target.value})} />
           </div>
 
-          {/* Content */}
+          {/* CONTENT */}
           <div>
-            <label className="block text-sm font-medium mb-1">Content *</label>
-            <Textarea
-              className="min-h-32"
-              value={formData.content}
-              onChange={(e) => setFormData({ ...formData, content: e.target.value })}
-              required
-            />
+            <label className="block text-sm font-medium mb-1">Full Content *</label>
+            <div className="bg-white border rounded">
+              <CKEditor
+                editor={ClassicEditor}
+                data={formData.content}
+                onChange={(event, editor) =>
+                  setFormData((prev) => ({ ...prev, content: editor.getData() }))
+                }
+              />
+            </div>
           </div>
 
-          {/* Image + Date */}
+          {/* IMAGE + DATE */}
           <div className="grid grid-cols-2 gap-4">
+
+            {/* IMAGE */}
             <div>
               <label className="block text-sm font-medium mb-1">Featured Image</label>
-              <input type="file" accept="image/*" onChange={(e) => setImageFile(e.target.files[0])} />
-              {initial?.image && <p className="text-xs mt-1">Current: {initial.image}</p>}
+              <input
+                type="file"
+                accept="image/*"
+                onChange={(e) => setImageFile(e.target.files[0])}
+              />
+              {initial?.image && (
+                <p className="text-xs text-gray-500 mt-1">
+                  Current: {initial.image}
+                </p>
+              )}
             </div>
 
+            {/* DATE */}
             <div>
               <label className="block text-sm font-medium mb-1 flex items-center gap-2">
                 <Calendar className="w-4 h-4" /> Publish Date
@@ -207,35 +233,42 @@ export default function CreateArticleModal({ open, onOpenChange, onAdd, categori
               <Input
                 type="date"
                 value={formData.publishDate}
-                onChange={(e) => setFormData({ ...formData, publishDate: e.target.value })}
+                onChange={(e)=>setFormData({...formData,publishDate:e.target.value})}
               />
             </div>
+
           </div>
 
-          {/* SEO fields */}
+          {/* SEO FIELDS */}
           <div className="space-y-2">
             <label className="text-sm font-medium">Meta Title</label>
             <Input
               value={formData.meta_title}
-              onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
+              onChange={(e)=>setFormData({...formData,meta_title:e.target.value})}
             />
 
             <label className="text-sm font-medium">Meta Description</label>
             <Textarea
               value={formData.meta_description}
-              onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
+              onChange={(e)=>setFormData({...formData,meta_description:e.target.value})}
             />
 
             <label className="text-sm font-medium">Meta Keywords</label>
             <Input
               value={formData.meta_keywords}
-              onChange={(e) => setFormData({ ...formData, meta_keywords: e.target.value })}
+              onChange={(e)=>setFormData({...formData,meta_keywords:e.target.value})}
+              placeholder="comma,separated,keywords"
             />
           </div>
 
-          {/* Buttons */}
+          {/* BUTTONS */}
           <div className="flex gap-2 pt-4">
-            <Button type="button" variant="outline" onClick={() => onOpenChange(false)} className="flex-1">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => onOpenChange(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button type="submit" className="flex-1">
